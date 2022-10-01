@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Gas Log</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="icon.png">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.23/css/jquery.dataTables.css">
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.23/js/jquery.dataTables.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+</head>
+<body>
+    <div class="container">
+        <br>
+        <div class="input-group mb-3 input-group-lg">
+            <div class="input-group-prepend">
+                <label class="input-group-text" for="who">Gas Useage For:</label>
+            </div>
+            <select class="custom-select" id="button" onchange="drawTable()">
+                <option value="all">Both</option>
+                <option value="cheryl">Cheryl</option>
+                <option value="chris">Chris</option>
+            </select>
+            <div class="input-group-append">
+                <button class="btn btn-success" type="submit" onclick="showModal()">New Log Entry</button>
+            </div>
+        </div>
+        <br>
+        <table id="log" class="display" width="100%"></table>
+    </div>
+
+<div class="modal" id="new_modal">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">New Gas Log Entry</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="input-group mb-3 input-group-lg">
+                <div class="input-group-prepend">
+                  <label class="input-group-text" for="who">Whom:</label>
+                </div>
+                <select class="custom-select" id="who">
+                  <option value="chris">Chris</option>
+                  <option value="cheryl">Cheryl</option>
+                </select>
+              </div>
+            <div class="input-group mb-3 input-group-lg">
+                <div class="input-group-prepend">
+                <span class="input-group-text">How Much?</span>
+                </div>
+                <input type="number" id="much" min="0" step=".01" class="form-control">
+            </div>
+            <div class="input-group mb-3 input-group-lg">
+                <div class="input-group-prepend">
+                <span class="input-group-text">When?</span>
+                </div>
+                <input type="date" id="when" class="form-control">
+            </div>
+            <div class="input-group mb-3 input-group-lg">
+                <button type="button" class="btn btn-success btn-lg" onclick="saveLog()">Save</button>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</body>
+<script>
+
+function saveLog(){
+    $.post('call.php', {type: 'new', when: $('#when').val(), who: $('#who').val(), much: $('#much').val()}, function(data){});
+    $('#new_modal').modal('hide');
+}
+
+
+function drawTable(){
+    if (! $.fn.DataTable.isDataTable('#log')){
+        var table = $('#log').DataTable({
+        paging: false,
+        searching: false,
+        ajax : {
+            url: 'call.php?type=gas&person='+$('#button').val(),
+            datasrc: 'data'
+        },
+        columns: [
+            { title: 'Month', data: 'Month', "targets": [ 0 ] },
+            { title: 'Gallons', data: 'Gas',"targets": [ 1 ] },
+            { title: 'Calculated Price', data: 'price', "targets": [ 2 ] },
+            { title: 'Actual Price', data: 'actualprice', "targets": [ 3 ] },
+            { title: 'sort', data: 'sort', visible: false, "targets": [ 4 ]}
+        ],
+        columnDefs: [{
+            "defaultContent": "g",
+            "targets": "_all",
+            "orderable": false
+        }],
+        order: [[ 4, 'desc' ]],
+        "ordering": true,
+        "bSort" : false
+
+        });
+    }   else    {
+        var log = $('#log').DataTable();
+        log.ajax.url('call.php?type=gas&person='+$('#button').val()).load();
+    }
+};
+
+function setTime(){
+    var today = new Date();
+    var dd = String(today.getDate()).padStart(2, '0');
+    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+    var yyyy = today.getFullYear();
+    today = yyyy + '-' + mm + '-' + dd;
+    $('#when').val(today);
+}
+
+function showModal(){
+    setTime();
+    $('#much').val('');
+    $('#who').val('chris');    
+    $("#new_modal").modal();
+}
+
+$( document ).ready(function() {
+    drawTable();
+});
+
+</script>
+</html>
